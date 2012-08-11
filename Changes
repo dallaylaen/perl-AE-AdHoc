@@ -1,5 +1,6 @@
 Revision history for AE-AdHoc
 
-0.01    Date/time
+0.02    Sat Aug 11 2012
         First version, released on an unsuspecting world.
+        - ae_recv, ae_send and ae_croak wotk and pass most basic tests
 
