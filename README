@@ -1,16 +1,23 @@
 AE-AdHoc
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+AE::AdHoc is a simplified AnyEvent interface intended for tests, examples,
+and hastily written scripts.
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+It boils down to:
 
+  use AE::AdHoc;
+
+  my $result = ae_recv {
+		do_something ( # the code under test
+			on_success => ae_send,  # callback - all done, stop event loop
+			on_failure => ae_croak, # callback - something happened, abort event loop
+		);
+	} 10; # timeout - fail test if it takes too long
+
+	# later
+	is ($result, $excepted_result, "...");
+
+This module is under development for now.
 
 INSTALLATION
 
