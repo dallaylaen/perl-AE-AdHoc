@@ -7,10 +7,6 @@ use strict;
 
 AE::AdHoc - Simplified  interface for tests/examples of AnyEvent-related code.
 
-=head1 VERSION
-
-Version 0.02
-
 =head1 SYNOPSIS
 
 Suppose we need to test some AnyEvent-related code. To avoid hanging up,
@@ -39,14 +35,17 @@ Now, the same with AE::AdHoc:
 
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+Functions C<ae_recv>, C<ae_send>, C<ae_croak>, C<ae_begin> and C<ae_end>
+are exported by default.
 
 =head1 SUBROUTINES
 
+B<Note>: Anywhere below, C<$cv> means L<AnyEvent>'s conditional variable
+responsible for current event loop. See C<condvar> section of L<AnyEvent>.
+
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.0201';
 
 use Carp;
 use AnyEvent::Strict;
@@ -60,6 +59,15 @@ BEGIN {
 };
 
 =head2 ae_recv { CODE; } $timeout;
+
+The main entry point of the module.
+
+Run CODE block, enter event loop and wait for $timeout seconds for callbacks
+set up in CODE to fire, than die. Return whatever was sent via C<ae_send>.
+
+$timeout is a real number.
+
+Other functions in this module would die if called outside of C<ae_recv>.
 
 =cut
 
@@ -85,13 +93,16 @@ sub ae_recv (&@) { ## no critic
 	# on exit, $cv is restored => destroyed
 };
 
-=head2 ae_send()
+=head2 ae_send
 
-Create callback for normal event loop endgin.
+Create callback for normal event loop ending.
 
 Returns a sub that feeds its first argument to $cv->send().
 
-=head2 ae_croak()
+May be called as ae_send->( ... ) if you want to stop event loop immediately
+(i.e. in a handcrafted callback).
+
+=head2 ae_croak
 
 Create callback for event loop termination.
 
@@ -99,25 +110,33 @@ Returns a sub that feeds its first argument to $cv->croak().
 
 =head2 ae_begin ( [ sub { ... } ] )
 
-Incremnt convar's counter, optionally setting a callback. When that
-counter reaches zero, the callback is executed, and event loop stops.
+=head2 ae_end
 
-Note that begin() acts at once, and does NOT return a closure.
+These subroutines provide ability to wait for several events to complete.
 
-=head2 ae_end()
+The AnyEvent's condition variable has a counter that is incremented by
+C<begin()> and decreased by C<end()>. Optionally, the C<begin()> function
+may also set a callback.
 
-Create callback that decreases condvar's counter. When that
-counter reaches zero, the callback  set by last begin() is executed,
-and event loop stops.
+Whenever the counter reaches zero, either that callback or just C<send()> is
+executed on the condvar.
 
-Returns a sub that feeds its first argument to $cv->end().
+B<Note>: If you do provide callback and want the event loop to stop there,
+consider putting C<ae_send-E<gt>( ... )> somewhere inside the callback.
+
+B<Note>: C<ae_begin()> acts at once, and does NOT return a closure. ae_end,
+however, returns a subroutine reference just like C<ae_send>/C<ae_croak> do.
+
+See begin/end section in L<AnyEvent>.
 
 =cut
 
+# set prototypes
 sub ae_send (); ## no critic
 sub ae_croak (); ## no critic
 sub ae_end (); ## no critic
 
+# define ae_send, ae_croak and ae_end at once
 foreach my $action (qw(send croak end)) {
 	my $name = "ae_$action";
 	my $code = sub {
@@ -144,6 +163,19 @@ sub ae_begin(@) { ## no critic
 	$cv->begin(@_);
 };
 
+=head1 GENERAL NOTES
+
+=over
+
+=item * Correctness is always put ahead of speed. In particular,
+L<AnyEvent::Strict> is used.
+
+=item * After the event loop started by ae_recv is terminated, no callbacks
+created within that ae_recv's invocation will be executed. Instead they issue
+a B<warning> that their home event loop has stopped, because dying in
+callback is a bad idea.
+
+=back
 
 =head1 AUTHOR
 
@@ -187,6 +219,9 @@ L<http://search.cpan.org/dist/AE-AdHoc/>
 
 =back
 
+=head1 SEE ALSO
+
+L<AnyEvent>
 
 =head1 ACKNOWLEDGEMENTS
 
