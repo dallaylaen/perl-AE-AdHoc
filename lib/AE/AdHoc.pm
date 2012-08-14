@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0201';
+our $VERSION = '0.0202';
 
 use Carp;
 use AnyEvent::Strict;
@@ -79,7 +79,7 @@ our $cv;
 
 sub ae_recv (&@) { ## no critic
 	my $code = shift;
-	my $timeout = shift;
+	my $timeout = shift || 0;
 	# TODO add %options support
 
 	$cv and croak("Nested calls to ae_recv are not allowed");
