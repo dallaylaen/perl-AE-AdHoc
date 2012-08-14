@@ -19,11 +19,11 @@ throws_ok {
 	ae_send;
 } qr(outside), "outside = no go";
 
-my $tm;
+my $timer;
 throws_ok {
 	ae_recv {
-		$tm = AnyEvent->timer( after => 0.1, cb => ae_send );
-		note "timer ref = $tm";
+		$timer = AnyEvent->timer( after => 0.1, cb => ae_send );
+		note "timer ref = $timer";
 	} 0;
 } qr(Timeout), "Start rotten timer test";
 
@@ -36,6 +36,6 @@ throws_ok {
 	} qr(Timeout), "Rotten timer didn't spoil later tests:";
 	is (scalar @warn, 1, " - 1 warning issued");
 	like ($warn[0], qr(outside), " - It was about 'outside': $warn[0]");
-	ok (ref $tm, " - Rotten timer still alive at this point (but harmless): $tm");
+	ok (ref $timer, " - Rotten timer still alive at this point (but harmless): $timer");
 
 };

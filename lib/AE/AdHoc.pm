@@ -14,14 +14,14 @@ we add a timeout. The resulting code is like:
 
     use AnyEvent;
     my $cv = AnyEvent->condvar;
-    my $tm = AnyEvent->timer(
+    my $timer = AnyEvent->timer(
         after => 10, cb => sub { $cv->croak("Timeout"); }
     );
     do_something(
         sub{ $cv->send(shift); }, sub{ $cv->croak(shift); }
     );
     my $result = $cv->recv();
-    undef $tm;
+    undef $timer;
     analyze_do_something( $result );
 
 Now, the same with AE::AdHoc:
@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0202';
+our $VERSION = '0.0203';
 
 use Carp;
 use AnyEvent::Strict;
@@ -84,12 +84,12 @@ sub ae_recv (&@) { ## no critic
 
 	$cv and croak("Nested calls to ae_recv are not allowed");
 	local $cv = AnyEvent->condvar;
-	my $tm = AnyEvent->timer( after => $timeout,
+	my $timer = AnyEvent->timer( after => $timeout,
 		cb => sub { $cv->croak("Timeout after $timeout seconds"); }
 	);
 	$code->();
 	return $cv->recv;
-	# on exit, $tm is autodestroyed
+	# on exit, $timer is autodestroyed
 	# on exit, $cv is restored => destroyed
 };
 
