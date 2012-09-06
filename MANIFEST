@@ -1,5 +1,6 @@
 Changes
 ignore.txt
+INSTALL
 lib/AE/AdHoc.pm
 Makefile.PL
 MANIFEST
