@@ -9,11 +9,19 @@ use AE::AdHoc;
 my @warn;
 $SIG{__WARN__} = sub { push @warn, shift };
 
-plan tests => 2;
+plan tests => 4;
 
 throws_ok {
 	ae_recv{ };
-} qr(Timeout), "Timeout issued for empty body";
+} qr(Timeout.*non-?zero), "No timeout = no go";
+
+throws_ok {
+	ae_recv{ } "foo";
+} qr(Timeout.*non-?zero), "Non-numeric timeout = no go";
+
+throws_ok {
+	ae_recv{ } 0.01;
+} qr(Timeout after), "Timeout with empty body";
 
 is (scalar @warn, 0, "no warnings");
 note "warning: $_" for @warn;

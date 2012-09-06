@@ -45,11 +45,11 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0203';
+our $VERSION = '0.0301';
 
 use Carp;
 use AnyEvent::Strict;
-use Scalar::Util qw(weaken);
+use Scalar::Util qw(weaken looks_like_number);
 
 use Exporter;
 
@@ -65,7 +65,8 @@ The main entry point of the module.
 Run CODE block, enter event loop and wait for $timeout seconds for callbacks
 set up in CODE to fire, than die. Return whatever was sent via C<ae_send>.
 
-$timeout is a real number.
+$timeout must be a nonzero real number. Negative value means "run forever".
+$timeout=0 would be ambigous, so it's excluded.
 
 Other functions in this module would die if called outside of C<ae_recv>.
 
@@ -79,12 +80,16 @@ our $cv;
 
 sub ae_recv (&@) { ## no critic
 	my $code = shift;
-	my $timeout = shift || 0;
+	my $timeout = shift;
 	# TODO add %options support
+
+	croak "Timeout must be specified and nonzero"
+		if (!$timeout or !looks_like_number($timeout));
 
 	$cv and croak("Nested calls to ae_recv are not allowed");
 	local $cv = AnyEvent->condvar;
-	my $timer = AnyEvent->timer( after => $timeout,
+	my $timer;
+	$timeout > 0 and $timer = AnyEvent->timer( after => $timeout,
 		cb => sub { $cv->croak("Timeout after $timeout seconds"); }
 	);
 	$code->();
@@ -183,12 +188,11 @@ Konstantin S. Uvarin, C<< <khedin at gmail.com> >>
 
 =head1 BUGS
 
+CAVEAT: This module is under development yet.
+
 Please report any bugs or feature requests to C<bug-ae-adhoc at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=AE-AdHoc>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-
 
 =head1 SUPPORT
 
@@ -200,6 +204,10 @@ You can find documentation for this module with the perldoc command.
 You can also look for information at:
 
 =over 4
+
+=item * github:
+
+L<https://github.com/dallaylaen/perl-AE-AdHoc>
 
 =item * RT: CPAN's request tracker
 

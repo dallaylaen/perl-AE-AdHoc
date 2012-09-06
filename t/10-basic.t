@@ -12,7 +12,7 @@ throws_ok {
 } qr(Timeout), "empty body => reach timeout => die";
 
 lives_and {
-	is (ae_recv { ae_send->(137); }, 137 );
+	is ((ae_recv { ae_send->(137); } 0.01), 137 );
 } "plain ae_send is fine";
 
 throws_ok {
@@ -24,7 +24,7 @@ throws_ok {
 	ae_recv {
 		$timer = AnyEvent->timer( after => 0.1, cb => ae_send );
 		note "timer ref = $timer";
-	} 0;
+	} 0.01;
 } qr(Timeout), "Start rotten timer test";
 
 # check that later-on callback generates a warning
