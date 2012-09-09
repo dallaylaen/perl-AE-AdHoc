@@ -1,7 +1,11 @@
 Revision history for AE-AdHoc
 
+0.04    Sun Sep 09 2012
+        * API: Add arglist support to callbacks: ae_recv { ae_send->(1..5) };
+        * API: Add extra arguments to callback: ae_recv { ae_send(1..5) };
+
 0.03    Thu Sep 06 2012
-	* Make empty/zero $timeout illegal.
+        * API: Make empty/zero $timeout illegal.
 
 0.0203  Tue Aug 14 2012
         * Fixed empty $timeout undef warning.

@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0301';
+our $VERSION = '0.04';
 
 use Carp;
 use AnyEvent::Strict;
@@ -98,20 +98,26 @@ sub ae_recv (&@) { ## no critic
 	# on exit, $cv is restored => destroyed
 };
 
-=head2 ae_send
+=head2 ae_send ( [@fixed_args] )
 
 Create callback for normal event loop ending.
 
-Returns a sub that feeds its first argument to $cv->send().
+Returns a sub that feeds its arguments to C<$cv->send()>. Arguments given to
+the function itself are prepended, as in
+C<$cv->send(@fixed_args, @callback_args)>.
+
+B<NOTE> that ae_recv will return all sent data "as is" in list context, and
+only first argument in scalar context.
 
 May be called as ae_send->( ... ) if you want to stop event loop immediately
 (i.e. in a handcrafted callback).
 
-=head2 ae_croak
+=head2 ae_croak ( [$fixed_error] )
 
 Create callback for event loop termination.
 
-Returns a sub that feeds its first argument to $cv->croak().
+Returns a sub that feeds its first argument to $cv->croak(). If argument is
+given, it will be used instead.
 
 =head2 ae_begin ( [ sub { ... } ] )
 
@@ -137,20 +143,22 @@ See begin/end section in L<AnyEvent>.
 =cut
 
 # set prototypes
-sub ae_send (); ## no critic
-sub ae_croak (); ## no critic
+sub ae_send (@); ## no critic
+sub ae_croak (;$); ## no critic
 sub ae_end (); ## no critic
 
 # define ae_send, ae_croak and ae_end at once
 foreach my $action (qw(send croak end)) {
 	my $name = "ae_$action";
 	my $code = sub {
+		my @args = @_;
+
 		croak("$name called outside ae_recv") unless $cv;
 		my $cvcopy = $cv;
 		weaken $cvcopy;
 		return sub {
 			if ($cvcopy) {
-				$cvcopy->$action(shift);
+				$cvcopy->$action(@args, @_);
 			} else {
 				# dying in callback is a bad idea, but a warning should be seen
 				carp "warning: $name callback called outside ae_recv";
