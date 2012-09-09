@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0401';
+our $VERSION = '0.0402';
 
 use Carp;
 use AnyEvent::Strict;
@@ -212,11 +212,11 @@ sub ae_goal {
 	};
 };
 
-=head2 AE::AdHoc->goals()
+=head2 AE::AdHoc->goals
 
 Return goals not yet achieved as hash ref.
 
-=head2 AE::AdHoc->results()
+=head2 AE::AdHoc->results
 
 Return results of completed goals as hash ref.
 
