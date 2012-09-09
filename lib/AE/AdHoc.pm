@@ -35,8 +35,8 @@ Now, the same with AE::AdHoc:
 
 =head1 EXPORT
 
-Functions C<ae_recv>, C<ae_send>, C<ae_croak>, C<ae_begin> and C<ae_end>
-are exported by default.
+Functions C<ae_recv>, C<ae_send>, C<ae_croak>, C<ae_begin>, C<ae_end>, and
+C<ae_goal> are exported by default.
 
 =head1 SUBROUTINES
 
@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.0401';
 
 use Carp;
 use AnyEvent::Strict;
@@ -55,7 +55,7 @@ use Exporter;
 
 BEGIN {
 	our @ISA = qw(Exporter);
-	our @EXPORT = qw(ae_recv ae_send ae_croak ae_begin ae_end);
+	our @EXPORT = qw(ae_recv ae_send ae_croak ae_begin ae_end ae_goal);
 };
 
 =head2 ae_recv { CODE; } $timeout;
@@ -92,6 +92,7 @@ sub ae_recv (&@) { ## no critic
 	$timeout > 0 and $timer = AnyEvent->timer( after => $timeout,
 		cb => sub { $cv->croak("Timeout after $timeout seconds"); }
 	);
+	_clear_goals();
 	$code->();
 	return $cv->recv;
 	# on exit, $timer is autodestroyed
@@ -175,6 +176,54 @@ sub ae_begin(@) { ## no critic
 
 	$cv->begin(@_);
 };
+
+=head1 ADVANCED MULTIPLE GOAL INTERFACE
+
+=head2 ae_goal( "name", @fixed_args )
+
+Create a named callback.
+
+When callback is created, a "goal" is set.
+
+When such callback is called, anything passed to it is saved in a special hash
+as array reference (prepended with @fixed_args, if any).
+
+When all goals are completed, the hash of results is returned by C<ae_recv>.
+
+If ae_send is called at some point, the list of incomplete and complete goals
+is still available via C<goals> and C<results> calls.
+
+The goals and results are reset every time upon entering ae_recv.
+
+=cut
+
+my %goals;
+my %results;
+sub _clear_goals { %goals = (); %results = (); };
+
+sub ae_goal {
+	my ($name, @fixed_args) = @_;
+
+	$goals{$name}++ unless $results{$name};
+	return sub {
+		$results{$name} ||= [ @fixed_args, @_ ];
+		delete $goals{$name};
+		ae_send->(\%results) unless %goals;
+	};
+};
+
+=head2 AE::AdHoc->goals()
+
+Return goals not yet achieved as hash ref.
+
+=head2 AE::AdHoc->results()
+
+Return results of completed goals as hash ref.
+
+=cut
+
+sub goals { return \%goals; };
+sub results { return \%results; };
 
 =head1 GENERAL NOTES
 
