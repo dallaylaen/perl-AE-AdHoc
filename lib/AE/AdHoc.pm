@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0402';
+our $VERSION = '0.05';
 
 use Carp;
 use AnyEvent::Strict;

@@ -1,5 +1,8 @@
 Revision history for AE-AdHoc
 
+0.05    Sun Sep 09 2012
+        * API: Add multiple goal interface (ae_goal)
+
 0.04    Sun Sep 09 2012
         * API: Add arglist support to callbacks: ae_recv { ae_send->(1..5) };
         * API: Add extra arguments to callback: ae_recv { ae_send(1..5) };
