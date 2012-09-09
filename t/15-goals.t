@@ -16,13 +16,13 @@ my $result;
 lives_ok {
 	my ($t1, $t2);
 	$result = ae_recv {
-		$t1 = AnyEvent->timer( after => 0.01,
+		$t1 = AnyEvent->timer( after => 0,
 			cb => sub { ae_goal("task1")->() }
 		);
-		$t2 = AnyEvent->timer( after => 0.01,
+		$t2 = AnyEvent->timer( after => 0,
 			cb => sub { ae_goal("task2", "fixed")->() }
 		);
-	} 0.02;
+	} 1;
 } "No timeout - goals complete";
 
 note "Got: ".Dumper($result);
