@@ -1,21 +1,21 @@
 AE-AdHoc
 
-AE::AdHoc is a simplified AnyEvent interface intended for tests, examples,
+AE::AdHoc is a simple interface around AnyEvent intended for tests, examples,
 and hastily written scripts.
 
 It boils down to:
 
-  use AE::AdHoc;
+    use AE::AdHoc;
 
-  my $result = ae_recv {
-		do_something ( # the code under test
-			on_success => ae_send,  # callback - all done, stop event loop
-			on_failure => ae_croak, # callback - something happened, abort event loop
-		);
-	} 10; # timeout - fail test if it takes too long
+    my $result = ae_recv {
+        do_something ( # the code under test
+            on_success => ae_send,  # callback - all done, stop event loop
+            on_failure => ae_croak, # callback - something happened, abort event loop
+        );
+    } 10; # timeout - fail test if it takes too long
 
-	# later
-	is ($result, $excepted_result, "...");
+    # later
+    is ($result, $excepted_result, "...");
 
 This module is under development for now.
 
