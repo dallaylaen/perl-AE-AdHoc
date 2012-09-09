@@ -18,10 +18,17 @@ my @probe = map {
 usage() unless @probe;
 
 # Real work
-my $alive = ae_recv {
-	tcp_connect $_->[0], $_->[1], ae_send("$_->[0]:$_->[1]") for @probe;
-} $timeout;
-print "Connect to $alive succeeded!\n";
+eval {
+	ae_recv {
+		tcp_connect $_->[0], $_->[1], ae_goal("$_->[0]:$_->[1]") for @probe;
+	} $timeout;
+};
+die $@ if $@ and $@ !~ /^Timeout/;
+
+my @alive = sort keys %{ AE::AdHoc->results };
+my @offline = sort keys %{ AE::AdHoc->goals };
+print "Connected: @alive\n" if @alive;
+print "Timed out: @offline\n" if @offline;
 # /Real work
 
 sub usage {
