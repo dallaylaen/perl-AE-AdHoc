@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Carp;
 use AnyEvent::Strict;
@@ -83,11 +83,13 @@ sub ae_recv (&@) { ## no critic
 	my $timeout = shift;
 	# TODO add %options support
 
-	croak "Timeout must be specified and nonzero"
+	# check we're not in event loop before dying
+	$cv and _croak("Nested calls to ae_recv are not allowed");
+	local $cv = AnyEvent->condvar;
+
+	croak "Parameter timeout must be a nonzero real number"
 		if (!$timeout or !looks_like_number($timeout));
 
-	$cv and croak("Nested calls to ae_recv are not allowed");
-	local $cv = AnyEvent->condvar;
 	my $timer;
 	$timeout > 0 and $timer = AnyEvent->timer( after => $timeout,
 		cb => sub { $cv->croak("Timeout after $timeout seconds"); }
@@ -161,8 +163,7 @@ foreach my $action (qw(send croak end)) {
 			if ($cvcopy) {
 				$cvcopy->$action(@args, @_);
 			} else {
-				# dying in callback is a bad idea, but a warning should be seen
-				carp "warning: $name callback called outside ae_recv";
+				return _error( "$name callback called outside ae_recv");
 			};
 		}; # end closure
 	}; # end generated sub
@@ -176,6 +177,7 @@ sub ae_begin(@) { ## no critic
 
 	$cv->begin(@_);
 };
+
 
 =head1 ADVANCED MULTIPLE GOAL INTERFACE
 
@@ -224,6 +226,42 @@ Return results of completed goals as hash ref.
 
 sub goals { return \%goals; };
 sub results { return \%results; };
+
+=head1 ERROR HANDLING
+
+Dying within event loop is a bad idea, so we issue B<warnings> and write
+errors to magic variables. It is up to the user to check these variables.
+
+=over
+
+=item * C<$AE::AdHoc::errstr> - last error (as in L<::DBI>).
+
+=item * C<@AE::AdHoc::errors> - all errors.
+
+=item * C<$AE::AdHoc::warnings> - set this to false to suppress warnings.
+
+=back
+
+=cut
+
+# Several in-house subs: error handling
+# Dying inside event-loop is a bad idea, so we add errstr & @errors
+#   and warnings
+
+our @errors;
+our $errstr;
+our $warnings = 1; # by default, complain loudly
+
+sub _error {
+	$errstr = shift;
+	push @errors, $errstr;
+	carp __PACKAGE__.": ERROR: $errstr" if $warnings;
+	return;
+};
+sub _croak {
+	_error(@_);
+	croak shift;
+};
 
 =head1 GENERAL NOTES
 

@@ -13,15 +13,15 @@ plan tests => 4;
 
 throws_ok {
 	ae_recv{ };
-} qr(Timeout.*non-?zero), "No timeout = no go";
+} qr(timeout.*non-?zero), "No timeout = no go";
 
 throws_ok {
 	ae_recv{ } "foo";
-} qr(Timeout.*non-?zero), "Non-numeric timeout = no go";
+} qr(timeout.*non-?zero), "Non-numeric timeout = no go";
 
 throws_ok {
 	ae_recv{ } 0.01;
-} qr(Timeout after), "Timeout with empty body";
+} qr(^Timeout after), "Timeout with empty body";
 
 is (scalar @warn, 0, "no warnings");
 note "warning: $_" for @warn;
