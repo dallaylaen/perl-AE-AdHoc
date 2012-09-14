@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.0601';
 
 use Carp;
 use AnyEvent::Strict;
@@ -163,7 +163,7 @@ foreach my $action (qw(send croak end)) {
 			if ($cvcopy) {
 				$cvcopy->$action(@args, @_);
 			} else {
-				return _error( "$name callback called outside ae_recv");
+				return _error( "Leftover $name callback called outside ae_recv");
 			};
 		}; # end closure
 	}; # end generated sub
@@ -206,8 +206,14 @@ sub _clear_goals { %goals = (); %results = (); };
 sub ae_goal {
 	my ($name, @fixed_args) = @_;
 
+	my $cvcopy = $cv;
+	croak "ae_goal called outside ae_recv" unless $cvcopy;
+	weaken $cvcopy;
+
 	$goals{$name}++ unless $results{$name};
 	return sub {
+		return _error ("Leftover ae_goal('$name') called outside ae_recv")
+			unless $cvcopy;
 		$results{$name} ||= [ @fixed_args, @_ ];
 		delete $goals{$name};
 		ae_send->(\%results) unless %goals;
