@@ -25,9 +25,19 @@ eval {
 };
 die $@ if $@ and $@ !~ /^Timeout/;
 
-my @alive = sort keys %{ AE::AdHoc->results };
 my @offline = sort keys %{ AE::AdHoc->goals };
+my (@alive, @reject);
+
+my $results = AE::AdHoc->results;
+foreach (keys %$results) {
+	# tcp_connect will not feed any args if connect failed
+	ref $results->{$_}->[0]
+		? push @alive, $_
+		: push @reject, $_;
+};
+
 print "Connected: @alive\n" if @alive;
+print "Rejected: @reject\n" if @reject;
 print "Timed out: @offline\n" if @offline;
 # /Real work
 
