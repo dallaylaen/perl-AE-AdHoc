@@ -1,5 +1,9 @@
 Revision history for AE-AdHoc
 
+0.07    Sun Sep 16 2012
+        * API: Add magic valiables for error handling
+        * FIX: Fix ae_goal, add verbose error messages for leftover callbacks
+
 0.05    Sun Sep 09 2012
         * API: Add multiple goal interface (ae_goal)
 
