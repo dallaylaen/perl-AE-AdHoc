@@ -1,4 +1,6 @@
 Changes
+examples/port-probe-multi.pl
+examples/port-probe.pl
 ignore.txt
 INSTALL
 lib/AE/AdHoc.pm
@@ -10,6 +12,10 @@ t/10-basic.t
 t/11-begin-end.t
 t/12-nested-dies.t
 t/13-null-timeout.t
+t/14-xargs.t
+t/15-goals.t
+t/16-goals2.t
+t/17-goals-leftover.t
 t/boilerplate.t
 t/manifest.t
 t/pod-coverage.t
