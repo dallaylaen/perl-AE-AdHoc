@@ -5,6 +5,7 @@ use Test::More;
 use Test::Exception;
 
 use AE::AdHoc;
+$AE::AdHoc::warnings = 0;
 
 plan tests => 1;
 throws_ok {

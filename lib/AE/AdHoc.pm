@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0601';
+our $VERSION = '0.0602';
 
 use Carp;
 use AnyEvent::Strict;
@@ -72,11 +72,12 @@ Other functions in this module would die if called outside of C<ae_recv>.
 
 =cut
 
+# $cv is our so that it can be localized and act as a lock
 our $cv;
-# $cv is global so that
-# 1) everyone sees it
-# 2) it can act as lock
-# 3) it can be localized
+
+# These are for error pretty-printing.
+my $iter; # ++ every time
+our $where; # "$file:$line[$iter]"
 
 sub ae_recv (&@) { ## no critic
 	my $code = shift;
@@ -89,6 +90,11 @@ sub ae_recv (&@) { ## no critic
 
 	croak "Parameter timeout must be a nonzero real number"
 		if (!$timeout or !looks_like_number($timeout));
+
+	# find out where we are
+	$iter++;
+	my @caller = caller(0);
+	local $where = "ae_recv[$iter] at $caller[1]:$caller[2]";
 
 	my $timer;
 	$timeout > 0 and $timer = AnyEvent->timer( after => $timeout,
@@ -157,14 +163,17 @@ foreach my $action (qw(send croak end)) {
 		my @args = @_;
 
 		croak("$name called outside ae_recv") unless $cv;
-		my $cvcopy = $cv;
-		weaken $cvcopy;
+		my $myiter = $iter; # remember where cb was created
+
+		my @caller = caller(0);
+		my $exact = "$name at $caller[1]:$caller[2] from $where";
+
 		return sub {
-			if ($cvcopy) {
-				$cvcopy->$action(@args, @_);
-			} else {
-				return _error( "Leftover $name callback called outside ae_recv");
-			};
+			return _error( "Leftover $exact called outside ae_recv" )
+				unless $cv;
+			return _error( "Leftover $exact called in $where")
+				unless $iter == $myiter;
+			$cv->$action(@args, @_);
 		}; # end closure
 	}; # end generated sub
 	no strict 'refs'; ## no critic
@@ -206,17 +215,21 @@ sub _clear_goals { %goals = (); %results = (); };
 sub ae_goal {
 	my ($name, @fixed_args) = @_;
 
-	my $cvcopy = $cv;
-	croak "ae_goal called outside ae_recv" unless $cvcopy;
-	weaken $cvcopy;
+	croak "ae_goal called outside ae_recv" unless $cv;
+	my $myiter = $iter;
+
+	my @caller = caller(0);
+	my $exact = "ae_goal('$name') at $caller[1]:$caller[2] from $where";
 
 	$goals{$name}++ unless $results{$name};
 	return sub {
-		return _error ("Leftover ae_goal('$name') called outside ae_recv")
-			unless $cvcopy;
+		return _error( "Leftover $exact called outside ae_recv" )
+			unless $cv;
+		return _error( "Leftover $exact called in $where")
+			unless $iter == $myiter;
 		$results{$name} ||= [ @fixed_args, @_ ];
 		delete $goals{$name};
-		ae_send->(\%results) unless %goals;
+		$cv->send(\%results) unless %goals;
 	};
 };
 

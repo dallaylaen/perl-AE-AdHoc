@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Test::Exception;
 use AnyEvent::Strict;
 use Data::Dumper;
@@ -9,6 +9,11 @@ use Data::Dumper;
 use AE::AdHoc;
 
 my $result;
+
+throws_ok {
+	ae_goal("foo");
+} qr(outside), "no ae_recv = no go";
+note $@;
 
 # We use sub {} in timers here because timer passes random args to its
 # callback. See L<::AnyEvent> timer section.

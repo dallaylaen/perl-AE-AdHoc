@@ -1,12 +1,11 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More;
+use Test::More tests => 9;
 use Test::Exception;
 
 use AE::AdHoc;
 
-plan tests => 8;
 throws_ok {
 	ae_recv { ; } 0.01;
 } qr(Timeout), "empty body => reach timeout => die";
@@ -17,6 +16,10 @@ lives_and {
 
 throws_ok {
 	ae_send;
+} qr(outside), "outside = no go";
+
+throws_ok {
+	ae_begin;
 } qr(outside), "outside = no go";
 
 my $timer;
@@ -35,7 +38,7 @@ throws_ok {
 		ae_recv { ; } 0.2;
 	} qr(Timeout), "Rotten timer didn't spoil later tests:";
 	is (scalar @warn, 1, " - 1 warning issued");
-	like ($warn[0], qr(outside), " - It was about 'outside': $warn[0]");
+	like ($warn[0], qr(Leftover), " - It was about 'Leftover': $warn[0]");
 	ok (ref $timer, " - Rotten timer still alive at this point (but harmless): $timer");
 
 };
