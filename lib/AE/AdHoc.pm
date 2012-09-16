@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0602';
+our $VERSION = '0.0603';
 
 use Carp;
 use AnyEvent::Strict;
@@ -246,7 +246,30 @@ Return results of completed goals as hash ref.
 sub goals { return \%goals; };
 sub results { return \%results; };
 
-=head1 ERROR HANDLING
+=head1 CAVEATS
+
+This module is still under heavy development, and is subject to change.
+Feature/change requests are accepted.
+
+=head2 Callback confinement
+
+If event loop is entered several times, the callbacks created in one
+invocations will NOT fire in another. Instead, they'll issue a warning
+and return (see "Error handling" below).
+
+Error message will be like C<ae_send at file:13 from ae_recv[1] at file:12
+called in ae_recv[2] at file:117>
+
+This is done so to isolate invocations as much as possible.
+
+However, detection of "this invocation" will go wrong if callback maker is
+called in a callback itself. For instance, this will always work the same:
+
+	# ...
+        callback => sub { ae_send->(@_); },
+	# ...
+
+=head2 Error handling
 
 Dying within event loop is a bad idea, so we issue B<warnings> and write
 errors to magic variables. It is up to the user to check these variables.
@@ -282,27 +305,11 @@ sub _croak {
 	croak shift;
 };
 
-=head1 GENERAL NOTES
-
-=over
-
-=item * Correctness is always put ahead of speed. In particular,
-L<AnyEvent::Strict> is used.
-
-=item * After the event loop started by ae_recv is terminated, no callbacks
-created within that ae_recv's invocation will be executed. Instead they issue
-a B<warning> that their home event loop has stopped, because dying in
-callback is a bad idea.
-
-=back
-
 =head1 AUTHOR
 
 Konstantin S. Uvarin, C<< <khedin at gmail.com> >>
 
 =head1 BUGS
-
-CAVEAT: This module is under development yet.
 
 Please report any bugs or feature requests to C<bug-ae-adhoc at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=AE-AdHoc>.  I will be notified, and then you'll
