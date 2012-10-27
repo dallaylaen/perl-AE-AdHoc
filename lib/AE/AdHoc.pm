@@ -5,7 +5,7 @@ use strict;
 
 =head1 NAME
 
-AE::AdHoc - Simplified  interface for tests/examples of AnyEvent-related code.
+AE::AdHoc - Simplified interface for tests/examples of AnyEvent-related code.
 
 =head1 SYNOPSIS
 
@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.0701';
 
 use Carp;
 use AnyEvent::Strict;
@@ -58,7 +58,7 @@ BEGIN {
 	our @EXPORT = qw(ae_recv ae_send ae_croak ae_begin ae_end ae_goal);
 };
 
-=head2 ae_recv { CODE; } $timeout;
+=head2 ae_recv { CODE; } [ $timeout ] %options;
 
 The main entry point of the module.
 
@@ -67,6 +67,17 @@ set up in CODE to fire, than die. Return whatever was sent via C<ae_send>.
 
 $timeout must be a nonzero real number. Negative value means "run forever".
 $timeout=0 would be ambigous, so it's excluded.
+
+Options may include:
+
+=over
+
+=item * timeout - override the $timeout parameter (one timeout MUST be present).
+
+=item * soft_timeout - Override $timeout, and don't die,
+but return undef instead.
+
+=back
 
 Other functions in this module would die if called outside of C<ae_recv>.
 
@@ -81,8 +92,10 @@ our $where; # "$file:$line[$iter]"
 
 sub ae_recv (&@) { ## no critic
 	my $code = shift;
-	my $timeout = shift;
-	# TODO add %options support
+	my $timeout = @_ % 2 && shift; # load bare timeout if present
+	my %opt = @_;
+
+	$timeout = $opt{timeout} || $opt{soft_timeout} || $timeout;
 
 	# check we're not in event loop before dying
 	$cv and _croak("Nested calls to ae_recv are not allowed");
@@ -96,9 +109,12 @@ sub ae_recv (&@) { ## no critic
 	my @caller = caller(0);
 	local $where = "ae_recv[$iter] at $caller[1]:$caller[2]";
 
+	my $on_timeout = $opt{soft_timeout}
+		? sub { $cv->send }
+		: sub { $cv->croak("Timeout after $timeout seconds"); };
 	my $timer;
 	$timeout > 0 and $timer = AnyEvent->timer( after => $timeout,
-		cb => sub { $cv->croak("Timeout after $timeout seconds"); }
+		cb => $on_timeout,
 	);
 	_clear_goals();
 	$code->();
