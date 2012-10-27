@@ -22,3 +22,4 @@ t/pod-coverage.t
 t/pod.t
 t/18-all-leftover.t
 t/19-soft-timeout.t
+t/20-ae_action.t

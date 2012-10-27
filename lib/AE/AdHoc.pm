@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0701';
+our $VERSION = '0.0702';
 
 use Carp;
 use AnyEvent::Strict;
@@ -55,7 +55,7 @@ use Exporter;
 
 BEGIN {
 	our @ISA = qw(Exporter);
-	our @EXPORT = qw(ae_recv ae_send ae_croak ae_begin ae_end ae_goal);
+	our @EXPORT = qw(ae_recv ae_send ae_croak ae_begin ae_end ae_goal ae_action);
 };
 
 =head2 ae_recv { CODE; } [ $timeout ] %options;
@@ -261,6 +261,48 @@ Return results of completed goals as hash ref.
 
 sub goals { return \%goals; };
 sub results { return \%results; };
+
+=head1 ADDITIONAL ROUTINES
+
+=head2 ae_action { CODE } %options
+
+Perform CODE after entering the event loop via ae_recv
+(a timer is used internally).
+
+CODE will NOT run after current event loop is terminated (see ae_recv).
+
+=cut
+
+sub ae_action (&@) { ## no critic
+	my $code = shift;
+	my %opt = @_;
+
+	# TODO copypaste from ae_goal, make a sub
+	croak "ae_action called outside ae_recv" unless $cv;
+	my $myiter = $iter;
+	my @caller = caller(0);
+	my $exact = "ae_action at $caller[1]:$caller[2] from $where";
+
+	$opt{after} ||= 0;
+
+	my $count = $opt{count};
+	my $inf = !$count;
+	my $n = 0;
+
+	my $timer;
+	my $cb = sub {
+		if (!$cv) {
+			undef $timer;
+			return _error( "Leftover $exact called outside ae_recv" );
+		};
+		$myiter == $iter or undef $timer;
+		$inf or $count-->0 or undef $timer;
+		$timer and $code->($n++);
+	};
+	$timer = AnyEvent->timer(
+		after=>$opt{after}, interval=>$opt{interval}, cb=>$cb);
+	return;
+};
 
 =head1 CAVEATS
 
