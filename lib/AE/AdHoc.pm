@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0801';
+our $VERSION = '0.0802';
 
 use Carp;
 use AnyEvent::Strict;
@@ -270,6 +270,19 @@ Perform CODE after entering the event loop via ae_recv
 (a timer is used internally).
 
 CODE will NOT run after current event loop is terminated (see ae_recv).
+
+Options may include:
+
+=over
+
+=item * after - delay before code execution (in seconds, may be fractional)
+
+=item * interval - delay between code executions (in seconds, may be fractional)
+
+=item * count - how many times to execute. If zero or omitted, means unlimited
+execution when interval is given, and just one otherwise.
+
+=back
 
 =cut
 
