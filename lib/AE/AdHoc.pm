@@ -45,7 +45,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.08';
+our $VERSION = '0.0801';
 
 use Carp;
 use AnyEvent::Strict;
@@ -127,9 +127,9 @@ sub ae_recv (&@) { ## no critic
 
 Create callback for normal event loop ending.
 
-Returns a sub that feeds its arguments to C<$cv->send()>. Arguments given to
+Returns a sub that feeds its arguments to C<$cv-E<gt>send()>. Arguments given to
 the function itself are prepended, as in
-C<$cv->send(@fixed_args, @callback_args)>.
+C<$cv-E<gt>send(@fixed_args, @callback_args)>.
 
 B<NOTE> that ae_recv will return all sent data "as is" in list context, and
 only first argument in scalar context.
@@ -304,6 +304,38 @@ sub ae_action (&@) { ## no critic
 	return;
 };
 
+=head1 ERROR HANDLING
+
+Dying within event loop is a bad idea, so we issue B<warnings> and write
+errors to magic variables. It is up to the user to check these variables.
+
+=over
+
+=item * C<$AE::AdHoc::errstr> - last error (as in L<::DBI>).
+
+=item * C<@AE::AdHoc::errors> - all errors.
+
+=item * C<$AE::AdHoc::warnings> - set this to false to suppress warnings.
+
+=back
+
+=cut
+
+our @errors;
+our $errstr;
+our $warnings = 1; # by default, complain loudly
+
+sub _error {
+	$errstr = shift;
+	push @errors, $errstr;
+	carp __PACKAGE__.": ERROR: $errstr" if $warnings;
+	return;
+};
+sub _croak {
+	_error(@_);
+	croak shift;
+};
+
 =head1 CAVEATS
 
 This module is still under heavy development, and is subject to change.
@@ -327,41 +359,7 @@ called in a callback itself. For instance, this will always work the same:
         callback => sub { ae_send->(@_); },
 	# ...
 
-=head2 Error handling
-
-Dying within event loop is a bad idea, so we issue B<warnings> and write
-errors to magic variables. It is up to the user to check these variables.
-
-=over
-
-=item * C<$AE::AdHoc::errstr> - last error (as in L<::DBI>).
-
-=item * C<@AE::AdHoc::errors> - all errors.
-
-=item * C<$AE::AdHoc::warnings> - set this to false to suppress warnings.
-
-=back
-
 =cut
-
-# Several in-house subs: error handling
-# Dying inside event-loop is a bad idea, so we add errstr & @errors
-#   and warnings
-
-our @errors;
-our $errstr;
-our $warnings = 1; # by default, complain loudly
-
-sub _error {
-	$errstr = shift;
-	push @errors, $errstr;
-	carp __PACKAGE__.": ERROR: $errstr" if $warnings;
-	return;
-};
-sub _croak {
-	_error(@_);
-	croak shift;
-};
 
 =head1 AUTHOR
 
