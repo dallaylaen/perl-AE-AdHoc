@@ -20,11 +20,11 @@ minimal typing.
 
 Suppose we have a subroutine named C<do_stuff( @args, $subref )>
 that is designed to run under AnyEvent. As do_stuff may have to wait for
-some external events to happen, instead ot returning a value right away,
-it will call C<$subref-E<gt>( $results )> when stuff is done.
+some external events to happen, it does not return a value right away.
+Instead, it will call C<$subref-E<gt>( $results )> when stuff is done.
 
 Now we need to test do_stuff, so we set up an event loop. We also need a timer,
-because a test that runs forever is annoying. So:
+because a test that runs forever is annoying. So the script goes like this:
 
     use AnyEvent;
 
@@ -64,7 +64,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0803';
+our $VERSION = '0.0804';
 
 use Carp;
 use AnyEvent::Strict;
