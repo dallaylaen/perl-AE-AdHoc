@@ -7,31 +7,50 @@ use strict;
 
 AE::AdHoc - Simplified interface for tests/examples of AnyEvent-related code.
 
+=head1 NON-DESCRIPTION
+
+This module is NOT for introducing oneself to AnyEvent, despite the mention of
+"simplified". More over, it REQUIRES knowledge of what a conditional variable,
+or simply "condvar", is. See L<Anyevent::Intro>.
+
+This module is NOT for building other modules, it's for running them with
+minimal typing.
+
 =head1 SYNOPSIS
 
-Suppose we need to test some AnyEvent-related code. To avoid hanging up,
-we add a timeout. The resulting code is like:
+Suppose we have a subroutine named C<do_stuff( @args, $subref )>
+that is designed to run under AnyEvent. As do_stuff may have to wait for
+some external events to happen, instead ot returning a value right away,
+it will call C<$subref-E<gt>( $results )> when stuff is done.
+
+Now we need to test do_stuff, so we set up an event loop. We also need a timer,
+because a test that runs forever is annoying. So:
 
     use AnyEvent;
+
+    # set up event loop
     my $cv = AnyEvent->condvar;
     my $timer = AnyEvent->timer(
         after => 10, cb => sub { $cv->croak("Timeout"); }
     );
-    do_something(
-        sub{ $cv->send(shift); }, sub{ $cv->croak(shift); }
-    );
+
+    do_stuff( @args, sub{ $cv->send(shift); } );
+
+    # run event loop, get rid of timer
     my $result = $cv->recv();
     undef $timer;
-    analyze_do_something( $result );
+
+    # finally
+    analyze_results( $result );
 
 Now, the same with AE::AdHoc:
 
     use AE::AdHoc;
 
     my $result = ae_recv {
-         do_something( ae_send, ae_croak );
+         do_stuff( @args, ae_send );
     } 10; # timeout
-    analyze_do_something( $result );
+    analyze_results( $result );
 
 =head1 EXPORT
 
@@ -45,7 +64,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0802';
+our $VERSION = '0.0803';
 
 use Carp;
 use AnyEvent::Strict;
@@ -63,7 +82,7 @@ BEGIN {
 The main entry point of the module.
 
 Run CODE block, enter event loop and wait for $timeout seconds for callbacks
-set up in CODE to fire, than die. Return whatever was sent via C<ae_send>.
+set up in CODE to fire, then die. Return whatever was sent via C<ae_send>.
 
 $timeout must be a nonzero real number. Negative value means "run forever".
 $timeout=0 would be ambigous, so it's excluded.
