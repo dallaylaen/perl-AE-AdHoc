@@ -6,8 +6,6 @@ use Test::Exception;
 
 use AE::AdHoc;
 
-my @trace;
-my $val;
 my @timers;
 
 plan tests => 5;
@@ -29,18 +27,24 @@ throws_ok {
 	} 0.02;
 } qr(Timeout), "A simple example with extra begin dies";
 
+my @trace;
+my $val;
+
 lives_ok {
 	ae_recv {
-		foreach my $delay (0.01, 0.02, 0.03) {
-			push @timers, AnyEvent->timer( after => $delay, cb => sub {
-				push @trace, $delay;
-				ae_end->();
-			});
+		my $tm;
+		my $iter;
+		my $attimer;
+		$attimer = sub {
+			push @trace, ++$iter;
+			ae_end->();
+			$tm = AE::timer 0.01, 0, $attimer;
 		};
+		$tm = AE::timer 0.01, 0, $attimer;
 		ae_begin( sub { ae_send->(++$val) } ) for (1,2);
 	} 1;
-} "More complex example works";
+} "More complex example lives";
 
 is ($val, 1, "Begin's callback executed once");
-is_deeply(\@trace, [0.01, 0.02], "end->() executed twice");
+is_deeply(\@trace, [1, 2], "end->() executed twice");
 
