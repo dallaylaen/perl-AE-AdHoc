@@ -64,7 +64,7 @@ responsible for current event loop. See C<condvar> section of L<AnyEvent>.
 
 =cut
 
-our $VERSION = '0.0805';
+our $VERSION = '0.09';
 
 use Carp;
 use AnyEvent::Strict;
@@ -202,6 +202,9 @@ foreach my $action (qw(send croak end)) {
 
 		my @caller = caller(0);
 		my $exact = "$name at $caller[1]:$caller[2] from $where";
+
+		carp "Useless use of callback $name in void context, use $name->(...) to return immediately"
+			unless defined wantarray;
 
 		return sub {
 			return _error( "Leftover $exact called outside ae_recv" )
