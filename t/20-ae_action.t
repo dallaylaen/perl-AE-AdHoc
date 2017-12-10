@@ -12,14 +12,15 @@ ae_recv {
 } soft_timeout=>0.2;
 
 is_deeply (\@res, [ 0, 1 ], "Timer fired twice");
+@res = ();
 
 my $x;
 ae_recv {
 	ae_action { $x++ };
-	ok (!$x, "Action didn't work yet");
+	ok (!$x, "Action hasn't fired yet");
 } soft_timeout=>0.2;
 
 is ($x, 1, "Action w/o parameters works (finally)");
-is_deeply (\@res, [ 0, 1 ], "Timer *still* fired twice");
+is_deeply (\@res, [ ], "Old timer *still* fired twice");
 
 is_deeply (\@AE::AdHoc::errors, [], "No errors in this test");
