@@ -18,6 +18,16 @@ WriteMakefile(
         'AnyEvent::Strict' => 0,
 	'Scalar::Util' => 0,
     },
+    META_MERGE => {
+        "meta-spec" => { version => 2 },
+        resources   => {
+            repository => {
+                type => 'git',
+                url => 'https://github.com/dallaylaen/perl-AE-AdHoc.git',
+                web => 'https://github.com/dallaylaen/perl-AE-AdHoc',
+            },
+        },
+    },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'AE-AdHoc-*' },
 );
